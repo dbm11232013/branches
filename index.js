@@ -1,5 +1,4 @@
 const app = require('express')();
-const request = require('request');
 const server = require('http').Server(app);
 const async = require('async');
 const axios = require('axios');
@@ -18,7 +17,6 @@ const urls = [qa1, qa2, qa3, qa4, ocr, sat];
 app.get('/', function(req, res){
     let filteredUrls = req.query.text ? urls.filter(url => url.includes(req.query.text)) : urls;
     let responseUrl = req.query.response_url;
-    console.log(req.headers);
 
     async.map(filteredUrls, getVersion,
         function(err, results){
@@ -40,7 +38,6 @@ let getVersion = (url, callback) => {
     let server = url.split('.')[1];
     axios.get(url)
     .then((res) => {
-        console.log('RESPONSE _____________',res.config);
         callback(null, 
             {
                 'server': server,

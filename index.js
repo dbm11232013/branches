@@ -1,9 +1,12 @@
-const express = require('express');
+const app = require('express')();
 const request = require('request');
-const app = express();
+const server = require('http').Server(app);
 const async = require('async');
+const axios = require('axios');
 
-app.listen('8060');
+server.listen('3000', () => {
+    console.log('Server listening on port 3000');
+});
 const qa1 = 'http://admin.qa1.activebuilding.com/build.json';
 const qa2 = 'http://admin.qa2.activebuilding.com/build.json';
 const qa3 = 'http://admin.qa3.activebuilding.com/build.json';
@@ -12,9 +15,10 @@ const ocr = 'http://admin.ocr.activebuilding.com/build.json';
 const sat = 'http://admin.sat.activebuilding.com/build.json';
 const urls = [qa1, qa2, qa3, qa4, ocr, sat];
 
-app.all('/', function(req, res){
+app.get('/', function(req, res){
     let filteredUrls = req.query.text ? urls.filter(url => url.includes(req.query.text)) : urls;
     let responseUrl = req.query.response_url;
+    console.log(req.headers);
 
     async.map(filteredUrls, getVersion,
         function(err, results){
@@ -34,22 +38,39 @@ app.all('/', function(req, res){
 let getVersion = (url, callback) => {
     let regexp = '[a-zA-Z]{3}-[0-9]{4}|master';
     let server = url.split('.')[1];
-    request(url, function(error, response, body){
-        if(!error){
-            callback(null, 
-                {
-                    server,
-                    'branch': body.match(regexp)[0]
-                }
-            );
-        } else {
-          console.log(error);
-          callback(null, 
-                {
-                    server,
-                    'branch': 'No build.json file'
-                }
-            );
-        }
+    axios.get(url)
+    .then((res) => {
+        console.log('RESPONSE _____________',res.config);
+        callback(null, 
+            {
+                'server': server,
+                'branch': res.data.match(regexp)[0]
+            }
+        );
     })
+    .catch((err) => {
+        console.log(err);
+    });
+    
+    
+    
+    // function(error, response, body){
+    //     console.log(response);
+    //     if(!error){
+    //         callback(null, 
+    //             {
+    //                 'server': server,
+    //                 'branch': body.match(regexp)[0]
+    //             }
+    //         );
+    //     } else {
+    //       console.log(error);
+    //       callback(null, 
+    //             {
+    //                 server,
+    //                 'branch': 'No build.json file'
+    //             }
+    //         );
+    //     }
+    // })
 }
